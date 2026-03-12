@@ -76,7 +76,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router'; // Add this at the top
 
+const router = useRouter(); // Initialize it inside <script setup>
 // Reactive state
 const email = ref('');
 const password = ref('');
@@ -111,7 +113,8 @@ const handleLogin = () => {
   // Simulate API call
   setTimeout(() => {
     isLoading.value = false;
-    console.log('Logged in:', { email: email.value, password: password.value, remember: rememberMe.value });
+    router.push('/dashboard');
+    //console.log('Logged in:', { email: email.value, password: password.value, remember: rememberMe.value });
     // In reality, Vue Router would navigate here: router.push('/dashboard')
   }, 2000);
 };

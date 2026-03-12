@@ -126,6 +126,7 @@
   };
   
   const handleRegister = () => {
+    router.push('/dashboard');
     // Reset all errors first
     nameError.value = '';
     emailError.value = '';
