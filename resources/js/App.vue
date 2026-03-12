@@ -1,12 +1,7 @@
 <template>
-    <div>
-      <h1>Welcome to TSHelp</h1>
-      <p>The centralized ticketing system is up and running!</p>
-    </div>
+    <router-view></router-view>
   </template>
-  
-  <script>
-  export default {
-    name: 'App'
-  }
-  </script>
+
+<script setup>
+import TSHelpLogin from './components/TSHelpLogin.vue'; // Adjust path
+</script>
