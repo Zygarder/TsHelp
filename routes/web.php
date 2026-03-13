@@ -1,9 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminController;
 
-// This tells Laravel: For any URL (where the path is anything or nothing), 
-// just return the main welcome view that contains our <div id="app">
+// 1. API Data Routes MUST go first! 
+// (We will manually add the /api prefix here so your Vue app can find it)
+Route::get('/api/admin/dashboard-stats', [AdminController::class, 'getDashboardStats']);
+
+// 2. The Catch-All Route MUST go last!
+// This tells Laravel: "If the URL doesn't match anything above, just load the Vue app."
 Route::get('/{any}', function () {
     return view('welcome'); 
 })->where('any', '.*');
