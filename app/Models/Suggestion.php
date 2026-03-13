@@ -11,11 +11,10 @@ class Suggestion extends Model
 
     protected $fillable = [
         'content',
-        'submitted_by',
         'is_read',
+        'submitted_by', // <--- Changed this to match your migration!
     ];
 
-    // This tells Laravel to automatically treat is_read as a true/false boolean
     protected $casts = [
         'is_read' => 'boolean',
     ];

@@ -30,4 +30,33 @@ class AdminController extends Controller
             'activeTask' => $activeTask
         ]);
     }
+    // 1. Get all tickets for the Reports List
+    public function getAllTickets()
+    {
+        // Fetch all tickets, ordering the newest ones first
+        $tickets = Ticket::orderBy('created_at', 'desc')->get();
+        
+        return response()->json([
+            'tickets' => $tickets
+        ]);
+    }
+
+    // 2. Update a ticket's status (e.g., from 'open' to 'in-progress')
+    public function updateTicketStatus(Request $request, $id)
+    {
+        // Validate that the status they are sending is allowed
+        $request->validate([
+            'status' => 'required|in:open,in-progress,resolved,rejected'
+        ]);
+
+        // Find the ticket and update it
+        $ticket = Ticket::findOrFail($id);
+        $ticket->status = $request->status;
+        $ticket->save();
+
+        return response()->json([
+            'message' => 'Ticket status updated successfully!',
+            'ticket' => $ticket
+        ]);
+    }
 }
