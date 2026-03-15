@@ -96,12 +96,11 @@
   
   <script setup>
   import { ref, computed } from 'vue';
-  import { useRouter } from 'vue-router'; // 1. Added Router
-  import axios from 'axios'; // 2. Added Axios
+  import { useRouter } from 'vue-router'; 
+  import axios from 'axios'; 
   
-  const router = useRouter(); // Initialize router
+  const router = useRouter(); 
   
-  // Reactive state
   const name = ref('');
   const email = ref('');
   const password = ref('');
@@ -118,7 +117,6 @@
     return emailRegex.test(e);
   };
   
-  // Reusable function to clear specific errors when typing
   const clearErrors = (field) => {
     if (field === 'name') nameError.value = '';
     if (field === 'email') emailError.value = '';
@@ -129,36 +127,29 @@
     if (field === 'confirm') confirmError.value = '';
   };
   
-  // 3. Made the function async to handle the real API call
   const handleRegister = async () => { 
-    // Reset all errors first
     nameError.value = '';
     emailError.value = '';
     passwordError.value = '';
     confirmError.value = '';
   
-    // 1. Check empty fields
     if (!name.value) nameError.value = 'Please enter your full name.';
     if (!email.value) emailError.value = 'Please enter your email.';
     if (!password.value) passwordError.value = 'Please create a password.';
     if (!confirmPassword.value) confirmError.value = 'Please confirm your password.';
   
-    // 2. Validate email format
     if (email.value && !isValidEmailFormat(email.value)) {
       emailError.value = 'Please use a valid email format.';
     }
   
-    // 3. Check if passwords match
     if (password.value && confirmPassword.value && password.value !== confirmPassword.value) {
       confirmError.value = 'Passwords do not match.';
     }
   
-    // 4. Stop if any frontend errors exist
     if (nameError.value || emailError.value || passwordError.value || confirmError.value) {
       return;
     }
   
-    // 5. Success! Make the REAL API call to Laravel
     isLoading.value = true;
     
     try {
@@ -169,14 +160,14 @@
       });
   
       console.log('Account created:', response.data);
-      
-      // Redirect the user to the login page (or dashboard) so they can sign in!
       router.push('/'); 
       
     } catch (error) {
-      // Catch backend validation errors (e.g., "Email already taken")
+      // Cleaned up the formatting here!
       if (error.response?.data?.errors?.email) {
         emailError.value = 'This email is already registered. Please sign in.';
+      } else if (error.response?.data?.errors?.password) {
+        passwordError.value = 'Make sure your password has 8 characters minimum.';
       } else {
         console.error('Registration failed:', error);
         alert('Something went wrong. Please try again.');

@@ -9,10 +9,12 @@ use App\Http\Controllers\AuthController;
 
 // --- AUTHENTICATION ---
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 
 // --- ADMIN ROUTES ---
 Route::prefix('admin')->group(function () {
     Route::get('/dashboard-stats', [AdminController::class, 'getDashboardStats']);
+    Route::get('/tickets', [ReportController::class, 'index']);
     Route::patch('/tickets/{ticket}', [ReportController::class, 'update']);
     Route::get('/suggestions', [SuggestionController::class, 'index']);
     Route::patch('/suggestions/{suggestion}/read', [SuggestionController::class, 'markAsRead']);

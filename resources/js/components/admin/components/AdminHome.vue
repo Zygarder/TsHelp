@@ -97,10 +97,7 @@ const activeTask = ref(null);
 // 2. Fetch data from Laravel when component loads
 onMounted(async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/admin/dashboard-stats'); // Or whatever your URL is
-    
-    // ADD THIS LINE: Let's see what Laravel actually sent!
-    console.log("LARAVEL RESPONSE: ", response.data);
+    const response = await axios.get('http://127.0.0.1:8000/api/admin/dashboard-stats'); 
     
     stats.value = response.data.stats;
     activeTask.value = response.data.activeTask;

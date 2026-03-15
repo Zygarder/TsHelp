@@ -7,23 +7,29 @@ use App\Models\Ticket;
 
 class ReportController extends Controller
 {
+    public function index()
+{
+    
+    $tickets = Ticket::all(); 
+
+   
+    return response()->json($tickets);
+}
     public function update(Request $request, Ticket $ticket)
     {
         $validated = $request->validate([
-            // If priority is null, we'll handle it below
             'priority' => 'nullable|string',
-            'status' => 'required|string',
+            'status' => 'nullable|string',
         ]);
 
         $ticket->update([
-            // If priority is null/empty, set it to 'normal' (or whatever your default is)
-            'urgency' => $validated['priority'],
-            'status' => $validated['status'],
+            'urgency' => $request->input('priority', $ticket->urgency),
+            'status'  => $request->input('status', $ticket->status),
         ]);
 
         return response()->json([
             'message' => 'Success',
-            'report' => $this->transformTicket($ticket) // Return the same format Vue expects
+            'report' => $this->transformTicket($ticket->fresh()) // Return the same format Vue expects
         ]);
     }
 

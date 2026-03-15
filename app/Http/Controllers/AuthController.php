@@ -19,7 +19,8 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']), 
+            // Passing the raw password. We are trusting the User model to hash it!
+            'password' => $validated['password'], 
             'role' => 'student', 
         ]);
 
@@ -27,5 +28,29 @@ class AuthController extends Controller
             'message' => 'Account created successfully!',
             'user' => $user
         ], 201);
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Incorrect email or password.'
+            ], 401); 
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful!',
+            'user' => $user, 
+            'token' => $token
+        ], 200);
     }
 }

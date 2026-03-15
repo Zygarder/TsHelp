@@ -80,37 +80,47 @@ const currentView = ref("home");
 const tickets = ref([]);
 const suggestions = ref([]);
 
-// 2. FETCHING LOGIC
 const fetchAllTickets = async () => {
     try {
         const response = await axios.get(
             "http://127.0.0.1:8000/api/admin/tickets"
         );
-        // Added || [] to prevent filter crashes
-        const rawTickets = response.data.tickets || [];
+        
+        const rawTickets = response.data || [];
 
-        tickets.value = rawTickets.map((t) => ({
-            id: t.id,
-            ticketId: `TKT-${t.id}`,
-            priority: t.urgency,
-            status: t.status,
-            issueType: t.issue_category,
-            location: t.lab_location,
-            specificItem: t.pc_number,
-            submittedAt: new Date(t.created_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-            }),
-            description: t.description,
-            submittedBy: "Student",
-        }));
+        tickets.value = rawTickets.map((t) => {
+            // 1. Fix the "Laravel Space Trap"
+            const safeDate = t.created_at ? t.created_at.replace(' ', 'T') : null;
+            const dateObj = safeDate ? new Date(safeDate) : null;
+
+            return {
+                id: t.id,
+                ticketId: `TKT-${t.id}`,
+                priority: t.urgency,
+                status: t.status,
+                issueType: t.issue_category,
+                location: t.lab_location,
+                specificItem: t.pc_number,
+                
+                // Formatted Date: "Mar 15, 2026"
+                submittedAt: dateObj 
+                    ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) 
+                    : 'No Date',
+                    
+                // Formatted Time: "6:06 PM"
+                submittedTime: dateObj 
+                    ? dateObj.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true }) 
+                    : '',
+
+                description: t.description,
+                submittedBy: "Student",
+            };
+        });
     } catch (error) {
         console.error("Error fetching tickets:", error);
         tickets.value = [];
     }
 };
-
 const fetchSuggestions = async () => {
     try {
         const response = await axios.get(
