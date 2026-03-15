@@ -96,6 +96,10 @@
   
   <script setup>
   import { ref, computed } from 'vue';
+  import { useRouter } from 'vue-router'; // 1. Added Router
+  import axios from 'axios'; // 2. Added Axios
+  
+  const router = useRouter(); // Initialize router
   
   // Reactive state
   const name = ref('');
@@ -120,13 +124,13 @@
     if (field === 'email') emailError.value = '';
     if (field === 'password') {
       passwordError.value = '';
-      confirmError.value = ''; // Clear confirm error too if they change base password
+      confirmError.value = ''; 
     }
     if (field === 'confirm') confirmError.value = '';
   };
   
-  const handleRegister = () => {
-    router.push('/dashboard');
+  // 3. Made the function async to handle the real API call
+  const handleRegister = async () => { 
     // Reset all errors first
     nameError.value = '';
     emailError.value = '';
@@ -149,23 +153,37 @@
       confirmError.value = 'Passwords do not match.';
     }
   
-    // 4. Stop if any errors exist
+    // 4. Stop if any frontend errors exist
     if (nameError.value || emailError.value || passwordError.value || confirmError.value) {
       return;
     }
   
-    // 5. Success! Simulate API call
+    // 5. Success! Make the REAL API call to Laravel
     isLoading.value = true;
     
-    setTimeout(() => {
-      isLoading.value = false;
-      console.log('Registered new user:', { 
-        name: name.value, 
-        email: email.value, 
-        password: password.value 
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/register', {
+        name: name.value,
+        email: email.value,
+        password: password.value
       });
-      // In reality, Vue Router would navigate here: router.push('/dashboard')
-    }, 2000);
+  
+      console.log('Account created:', response.data);
+      
+      // Redirect the user to the login page (or dashboard) so they can sign in!
+      router.push('/'); 
+      
+    } catch (error) {
+      // Catch backend validation errors (e.g., "Email already taken")
+      if (error.response?.data?.errors?.email) {
+        emailError.value = 'This email is already registered. Please sign in.';
+      } else {
+        console.error('Registration failed:', error);
+        alert('Something went wrong. Please try again.');
+      }
+    } finally {
+      isLoading.value = false;
+    }
   };
   
   const buttonText = computed(() => isLoading.value ? 'Creating Account...' : 'Create Account');
