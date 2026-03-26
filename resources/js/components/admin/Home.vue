@@ -123,17 +123,31 @@ const fetchAllTickets = async () => {
 };
 const fetchSuggestions = async () => {
     try {
-        const response = await axios.get(
-            "http://127.0.0.1:8000/api/admin/suggestions"
-        );
-        // Added || [] to prevent filter crashes
-        suggestions.value = response.data.suggestions || [];
+        const response = await axios.get("http://127.0.0.1:8000/api/admin/suggestions");
+        
+        // Laravel usually sends this back as an object with a 'suggestions' key
+        const rawData = response.data.suggestions || [];
+
+        suggestions.value = rawData.map((s) => ({
+            id: s.id,
+            
+            // Matches $table->text('content')
+            content: s.content, 
+            
+            // Matches $table->boolean('is_read') -> mapped to 'isRead' for Vue
+            isRead: Boolean(s.is_read), 
+            
+            // Matches $table->string('submitted_by') -> mapped to 'submittedBy' for Vue
+            submittedBy: s.submitted_by || "Anonymous",
+            
+            // Matches $table->timestamps() (created_at) -> mapped to 'submittedAt' for Vue
+            submittedAt: s.created_at ? s.created_at.replace(' ', 'T') : new Date().toISOString()
+        }));
     } catch (error) {
         console.error("Error fetching suggestions:", error);
         suggestions.value = [];
     }
 };
-
 onMounted(() => {
     fetchAllTickets();
     fetchSuggestions();

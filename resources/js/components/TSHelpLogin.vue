@@ -35,7 +35,7 @@
                             <line x1="12" y1="17" x2="12" y2="21"></line>
                         </svg>
                     </div>
-                    <h1 class="text-gradient">Tech Support System</h1>
+                    <h1 class="text-gradient">CCIS TSHelp</h1>
                     <p class="subtitle">Sign in to continue</p>
                 </div>
 
