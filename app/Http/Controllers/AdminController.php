@@ -20,14 +20,14 @@ class AdminController extends Controller
         ];
 
         // 2. Get the "Active Task"
-        $activeTask = Ticket::where('status', 'in-progress')
-            ->orderBy('created_at', 'asc')
-            ->first();
+        $activeTasks = Ticket::where('status', 'in-progress')
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        // 3. Return as JSON for Axios to catch
+
         return response()->json([
             'stats' => $stats,
-            'activeTask' => $activeTask
+            'activeTasks' => $activeTasks
         ]);
     }
     // 1. Get all tickets for the Reports List
@@ -35,7 +35,7 @@ class AdminController extends Controller
     {
         // Fetch all tickets, ordering the newest ones first
         $tickets = Ticket::orderBy('created_at', 'desc')->get();
-        
+
         return response()->json([
             'tickets' => $tickets
         ]);

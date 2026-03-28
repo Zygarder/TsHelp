@@ -31,8 +31,12 @@
                         {{ s.isRead ? "Read" : "New" }}
                     </span>
                     <button
-                        @click.stop="handleToggleRead(s.id)"
-                        class="icon-btn"
+                        @click.stop="handleMarkAsRead(s.id, s.isRead)"
+                        :disabled="s.isRead"
+                        :class="[
+                            'icon-btn',
+                            { 'opacity-50 cursor-not-allowed': s.isRead },
+                        ]"
                     >
                         <EyeOffIcon v-if="s.isRead" :size="16" />
                         <EyeIcon v-else :size="16" />
@@ -48,29 +52,37 @@
                 </div>
             </div>
         </div>
+        <SuggestionModal
+            v-if="isModalOpen"
+            :suggestion="selectedSuggestion"
+            @close="handleCloseModal"
+        />
     </div>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import axios from "axios";
-import { 
-    Eye as EyeIcon, 
-    EyeOff as EyeOffIcon, 
-    User as UserIcon, 
-    Calendar as CalendarIcon 
+import {
+    Eye as EyeIcon,
+    EyeOff as EyeOffIcon,
+    User as UserIcon,
+    Calendar as CalendarIcon,
 } from "lucide-vue-next";
+import SuggestionModal from "./SuggestionDetailModal.vue";
 
 // 1. Accept the data from Home.vue
 const props = defineProps({
     suggestionsData: {
         type: Array,
-        default: () => []
-    }
+        default: () => [],
+    },
 });
+const isModalOpen = ref(false);
+const selectedSuggestion = ref(null);
 
 // 2. Allow this component to tell Home.vue to update
-const emit = defineEmits(['update']);
+const emit = defineEmits(["update"]);
 
 // 3. COMPUTED PROPERTIES (To make your template stats work)
 // This links your template's "suggestions" to the data passed from the parent
@@ -78,35 +90,48 @@ const suggestions = computed(() => props.suggestionsData);
 
 // This automatically counts the unread items for your yellow stat card
 const unreadCount = computed(() => {
-    return suggestions.value.filter(s => !s.isRead).length;
+    return suggestions.value.filter((s) => !s.isRead).length;
 });
 
 // 4. EVENT HANDLERS
 // What happens when they click the whole card
-const handleOpenSuggestion = async (suggestion) => {
-    // TODO: If you have a modal, open it here!
-    console.log("Opening suggestion:", suggestion.id);
+const handleMarkAsRead = async (id, isCurrentlyRead) => {
+    // Stop them right here if it's already read! No going back.
+    if (isCurrentlyRead) return;
 
-    // If it's new, mark it as read in the database
-    if (!suggestion.isRead) {
-        try {
-            await axios.patch(`http://127.0.0.1:8000/api/admin/suggestions/${suggestion.id}/read`);
-            emit('update'); // This updates the sidebar numbers instantly!
-        } catch (error) {
-            console.error("Failed to mark as read:", error);
-        }
+    try {
+        await axios.patch(
+            `http://127.0.0.1:8000/api/admin/suggestions/${id}/read`,
+        );
+        emit("update"); // Instantly updates the UI and counters
+    } catch (error) {
+        console.error("Failed to mark as read:", error);
     }
 };
 
-// What happens when they click the little eyeball icon
-const handleToggleRead = async (id) => {
-    try {
-        // Hitting the same endpoint to mark it as read
-        await axios.patch(`http://127.0.0.1:8000/api/admin/suggestions/${id}/read`);
-        emit('update');
-    } catch (error) {
-        console.error("Failed to toggle read status:", error);
+// The Modal open function
+const handleOpenSuggestion = (suggestion) => {
+    selectedSuggestion.value = suggestion;
+    isModalOpen.value = true;
+};
+
+// The Modal close function (Also one-way only!)
+const handleCloseModal = async () => {
+    isModalOpen.value = false; // Hide modal instantly
+
+    // If it was unread, permanently mark it as read
+    if (selectedSuggestion.value && !selectedSuggestion.value.isRead) {
+        try {
+            await axios.patch(
+                `http://127.0.0.1:8000/api/admin/suggestions/${selectedSuggestion.value.id}/read`,
+            );
+            emit("update"); // Instantly updates the UI and counters
+        } catch (error) {
+            console.error("Failed to mark as read upon closing:", error);
+        }
     }
+
+    selectedSuggestion.value = null; // Clear the data
 };
 </script>
 

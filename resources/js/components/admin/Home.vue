@@ -40,11 +40,14 @@
             </header>
 
             <div class="view-container">
-                <AdminHome v-if="currentView === 'home'" />
+                <AdminHome
+                    v-if="currentView === 'home'"
+                    @update="handleListUpdate"
+                />
                 <SuggestionsList
-                    v-else-if="currentView === 'suggestions'"
-                    :suggestions-data="suggestions"
-                    @update="handleSuggestionUpdate"
+                    v-if="currentView === 'suggestions'"
+                    :suggestionsData="suggestions"
+                    @update="fetchSuggestions"
                 />
 
                 <ReportsList
@@ -79,18 +82,20 @@ import axios from "axios";
 const currentView = ref("home");
 const tickets = ref([]);
 const suggestions = ref([]);
-
+const emit = defineEmits(["update"]);
 const fetchAllTickets = async () => {
     try {
         const response = await axios.get(
-            "http://127.0.0.1:8000/api/admin/tickets"
+            "http://127.0.0.1:8000/api/admin/tickets",
         );
-        
+
         const rawTickets = response.data || [];
 
         tickets.value = rawTickets.map((t) => {
             // 1. Fix the "Laravel Space Trap"
-            const safeDate = t.created_at ? t.created_at.replace(' ', 'T') : null;
+            const safeDate = t.created_at
+                ? t.created_at.replace(" ", "T")
+                : null;
             const dateObj = safeDate ? new Date(safeDate) : null;
 
             return {
@@ -101,16 +106,24 @@ const fetchAllTickets = async () => {
                 issueType: t.issue_category,
                 location: t.lab_location,
                 specificItem: t.pc_number,
-                
+
                 // Formatted Date: "Mar 15, 2026"
-                submittedAt: dateObj 
-                    ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) 
-                    : 'No Date',
-                    
+                submittedAt: dateObj
+                    ? dateObj.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                      })
+                    : "No Date",
+
                 // Formatted Time: "6:06 PM"
-                submittedTime: dateObj 
-                    ? dateObj.toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true }) 
-                    : '',
+                submittedTime: dateObj
+                    ? dateObj.toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                      })
+                    : "",
 
                 description: t.description,
                 submittedBy: "Student",
@@ -123,25 +136,22 @@ const fetchAllTickets = async () => {
 };
 const fetchSuggestions = async () => {
     try {
-        const response = await axios.get("http://127.0.0.1:8000/api/admin/suggestions");
-        
+        const response = await axios.get(
+            "http://127.0.0.1:8000/api/admin/suggestions",
+        );
+
         // Laravel usually sends this back as an object with a 'suggestions' key
         const rawData = response.data.suggestions || [];
-
+        console.log("Raw API Response:", response.data);
         suggestions.value = rawData.map((s) => ({
             id: s.id,
-            
-            // Matches $table->text('content')
-            content: s.content, 
-            
-            // Matches $table->boolean('is_read') -> mapped to 'isRead' for Vue
-            isRead: Boolean(s.is_read), 
-            
-            // Matches $table->string('submitted_by') -> mapped to 'submittedBy' for Vue
-            submittedBy: s.submitted_by || "Anonymous",
-            
-            // Matches $table->timestamps() (created_at) -> mapped to 'submittedAt' for Vue
-            submittedAt: s.created_at ? s.created_at.replace(' ', 'T') : new Date().toISOString()
+            content: s.content,
+            // Vue mapped to what Laravel actually sent:
+            isRead: Boolean(s.isRead),
+            submittedBy: s.submittedBy || "Anonymous",
+            submittedAt: s.submittedAt
+                ? s.submittedAt.replace(" ", "T")
+                : new Date().toISOString(),
         }));
     } catch (error) {
         console.error("Error fetching suggestions:", error);
@@ -156,7 +166,7 @@ onMounted(() => {
 // 3. COMPUTED PROPERTIES
 const counts = computed(() => ({
     toReview: tickets.value.filter(
-        (t) => t.status === "open" || t.status === "pending_review"
+        (t) => t.status === "open" || t.status === "pending_review",
     ).length,
     pending: tickets.value.filter((t) => t.status === "in-progress").length,
     completed: tickets.value.filter((t) => t.status === "resolved").length,
@@ -201,12 +211,12 @@ const navItems = computed(() => [
 
 const viewTitle = computed(
     () =>
-        navItems.value.find((i) => i.id === currentView.value)?.label || "Home"
+        navItems.value.find((i) => i.id === currentView.value)?.label || "Home",
 );
 const viewDescription = computed(() =>
     currentView.value === "home"
         ? "Overview of all tickets"
-        : "Manage your items"
+        : "Manage your items",
 );
 
 // 4. EVENT HANDLERS
@@ -216,6 +226,25 @@ const handleListUpdate = () => {
 
 const handleSuggestionUpdate = () => {
     fetchSuggestions();
+};
+const markAsComplete = async (taskId) => {
+    isCompleting.value = taskId;
+    try {
+        // 1. Update the database
+        await axios.patch(`http://127.0.0.1:8000/api/admin/tickets/${taskId}`, {
+            status: "resolved",
+        });
+
+        // 2. Fetch fresh data for THIS dashboard
+        await fetchDashboardData();
+
+        emit("update");
+    } catch (error) {
+        console.error("Failed to complete task:", error);
+        alert("Failed to update status. Please try again.");
+    } finally {
+        isCompleting.value = null;
+    }
 };
 </script>
 
