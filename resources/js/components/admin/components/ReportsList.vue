@@ -72,7 +72,7 @@
 
                         <button
                             v-if="status === 'to-review'"
-                            @click.stop="$emit('set-active', report)"
+                            @click.stop="startWorking(report)"
                             class="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30 text-sm font-semibold"
                         >
                             Start Working
@@ -106,34 +106,26 @@
             v-if="selectedReport"
             :report="selectedReport"
             @close="selectedReport = null"
-            @update="$emit('update')"
+            @update="handleUpdateReport"
         />
     </div>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
+import axios from "axios"; // Don't forget to import axios!
 import ReportDetailModal from "./ReportDetailModal.vue";
 
-// 1. Updated Props: We now accept 'ticketsData' from the parent
 const props = defineProps({
-    status: {
-        type: String,
-        default: "to-review",
-    },
-    ticketsData: {
-        type: Array,
-        default: () => [],
-    },
+    status: { type: String, default: "to-review" },
+    ticketsData: { type: Array, default: () => [] },
 });
 
-// 2. Define Emits: This tells the parent "Hey, something changed, refresh the DB!"
+// We only need "update" here
 const emit = defineEmits(["update"]);
 
-// 3. Reactive Variables
 const selectedReport = ref(null);
 
-// 4. Computed Property: This filters the data passed down from the parent
 const filteredReports = computed(() => {
     return props.ticketsData.filter((ticket) => {
         if (props.status === "to-review") return ticket.status === "open";
@@ -144,7 +136,6 @@ const filteredReports = computed(() => {
     });
 });
 
-// 5. Helper function for colors (Keep this as is)
 const getPriorityColor = (priority) => {
     switch (priority) {
         case "high":
@@ -158,9 +149,24 @@ const getPriorityColor = (priority) => {
     }
 };
 
-// 6. Updated: Instead of updating locally, we tell the parent to refresh everything
+// NEW: Actually make the "Start Working" button do its job!
+const startWorking = async (report) => {
+    try {
+        await axios.patch(
+            `http://127.0.0.1:8000/api/admin/tickets/${report.id}`,
+            {
+                status: "in-progress",
+            },
+        );
+        emit("update"); // Tell Home.vue to refresh the lists/numbers instantly
+    } catch (error) {
+        console.error("Failed to start working on ticket:", error);
+    }
+};
+
+// Your existing fix to properly close the modal after an update
 const handleUpdateReport = () => {
-    emit("update"); // This triggers fetchAllTickets() in your Home/Parent component
-    selectedReport.value = null; // Close the modal
+    emit("update");
+    selectedReport.value = null;
 };
 </script>

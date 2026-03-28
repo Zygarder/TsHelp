@@ -12,21 +12,19 @@
             </div>
 
             <nav class="nav-menu">
-                <button
-                    v-for="item in navItems"
-                    :key="item.id"
-                    @click="currentView = item.id"
-                    :class="['nav-item', { active: currentView === item.id }]"
-                >
-                    <div class="nav-label">
-                        <component :is="item.icon" :size="20" />
-                        <span>{{ item.label }}</span>
-                    </div>
-                    <span v-if="item.count > 0" class="badge">{{
-                        item.count
-                    }}</span>
-                </button>
-            </nav>
+    <button
+        v-for="item in navItems"
+        :key="item.id"
+        @click="handleNavClick(item.id)"
+        :class="['nav-item', { active: currentView === item.id }]"
+    >
+        <div class="nav-label">
+            <component :is="item.icon" :size="20" />
+            <span>{{ item.label }}</span>
+        </div>
+        <span v-if="item.count > 0" class="badge">{{ item.count }}</span>
+    </button>
+</nav>
             <RouterLink to="/" class="sign-out">
                 <LogOutIcon :size="20" />
                 <span>Sign Out</span>
@@ -244,6 +242,18 @@ const markAsComplete = async (taskId) => {
         alert("Failed to update status. Please try again.");
     } finally {
         isCompleting.value = null;
+    }
+};
+// NEW: The bulletproof navigation handler
+const handleNavClick = (viewId) => {
+
+    currentView.value = viewId;
+    if (viewId === 'suggestions') {
+        fetchSuggestions();
+    } else if (viewId === 'home') {
+    } else {
+
+        fetchAllTickets();
     }
 };
 </script>

@@ -134,6 +134,7 @@ import {
     Calendar as CalendarIcon,
     Check as CheckIcon,
 } from "lucide-vue-next";
+const emit = defineEmits(['update']);
 
 const isLoading = ref(true);
 const isCompleting = ref(null); // Tracks which button is loading
@@ -162,15 +163,12 @@ const fetchDashboardData = async () => {
 };
 
 const markAsComplete = async (taskId) => {
-    isCompleting.value = taskId;
-    try {
-        // We hit the exact same endpoint your ReportsList uses to update status!
-        // Using "resolved" since that matches your counts.completed logic in Home.vue
-        await axios.patch(`http://127.0.0.1:8000/api/admin/tickets/${taskId}`, {
-            status: "resolved",
-        });
+  isCompleting.value = taskId;
+  try {
+    await axios.patch(`http://127.0.0.1:8000/api/admin/tickets/${taskId}`, {
+      status: 'resolved'
+    });
 
-        // Re-fetch the data so the stats update and the completed task vanishes!
         await fetchDashboardData();
     } catch (error) {
         console.error("Failed to complete task:", error);
